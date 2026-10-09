@@ -1,0 +1,10 @@
+{
+  "name": "stock-news-terminal",
+  "version": "1.0.0",
+  "description": "Real-time stock news web terminal aggregating APIs from CNBC, Uptick (Yahoo/Bloomberg), WSJ, and StockEdge",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

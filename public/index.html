@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FINPULSE // NSE Stock Terminal (National Stock Exchange of India)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🇮🇳</text></svg>">
+</head>
+<body class="terminal-dark">
+  <!-- Top Navigation & Live NSE Terminal Header -->
+  <header class="terminal-header">
+    <div class="header-left">
+      <div class="brand">
+        <div class="brand-logo">
+          <span class="pulse-beacon"></span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+            <polyline points="16 7 22 7 22 13"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">FIN<span>PULSE</span> <span class="badge-pro">NSE TERMINAL</span></div>
+          <div class="brand-sub">NATIONAL STOCK EXCHANGE OF INDIA // DALAL STREET LIVE INTEL</div>
+        </div>
+      </div>
+
+      <!-- Indian Market Clocks -->
+      <div class="market-clocks">
+        <div class="clock-item">
+          <span class="clock-dot open" id="nseClockDot"></span>
+          <span class="clock-label">NSE (MUMBAI)</span>
+          <span class="clock-status" id="nseClockStatus">9:15 AM - 3:30 PM IST</span>
+        </div>
+        <div class="clock-item">
+          <span class="clock-dot open"></span>
+          <span class="clock-label">BSE</span>
+          <span class="clock-status">EQUITIES</span>
+        </div>
+        <div class="clock-item">
+          <span class="clock-dot open"></span>
+          <span class="clock-label">TIME</span>
+          <span class="clock-status" id="istTimeClock">IST</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10-Second Auto-Refresh Engine & Controls -->
+    <div class="header-right">
+      <div class="refresh-panel">
+        <div class="refresh-countdown-container" id="countdownContainer" title="Auto-refreshing every 10 seconds">
+          <svg class="progress-ring" width="34" height="34">
+            <circle class="progress-ring-circle-bg" stroke="rgba(255,255,255,0.1)" stroke-width="3" fill="transparent" r="14" cx="17" cy="17"/>
+            <circle class="progress-ring-circle" id="countdownCircle" stroke="#00f59b" stroke-width="3" stroke-linecap="round" fill="transparent" r="14" cx="17" cy="17"/>
+          </svg>
+          <span class="countdown-text" id="countdownSec">10</span>
+        </div>
+
+        <div class="refresh-info">
+          <div class="refresh-label">AUTO-SYNC <span class="refresh-rate">10s</span></div>
+          <div class="refresh-sub" id="refreshStatusText">LIVE NSE FEED</div>
+        </div>
+
+        <button class="btn-icon" id="btnToggleAutoRefresh" title="Pause / Resume 10s Auto Refresh">
+          <svg id="iconPause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="6" y="4" width="4" height="16"></rect>
+            <rect x="14" y="4" width="4" height="16"></rect>
+          </svg>
+          <svg id="iconPlay" class="hidden" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </button>
+
+        <button class="btn-refresh" id="btnManualRefresh" title="Force Refresh Now">
+          <svg class="spin-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          <span>REFRESH</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Scrolling NSE Stock Ticker Marquee with Real-Time Ticks -->
+  <section class="ticker-tape-container">
+    <div class="ticker-label">
+      <span class="live-blink">●</span>
+      <span class="ticker-label-text">NSE LIVE QUOTES</span>
+      <span class="ticker-tick-badge" id="tickerTickBadge">LIVE STREAM</span>
+    </div>
+    <div class="ticker-tape" id="tickerTape">
+      <div class="ticker-track" id="tickerTrack">
+        <!-- Live ticks populated from /api/stocks -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Breaking NSE Stock Alert Banner (Moving Headline Ticker) -->
+  <div class="breaking-banner" id="breakingBanner">
+    <div class="breaking-badge">
+      <span class="flashing-dot"></span>
+      BREAKING NSE HEADLINE
+    </div>
+    <div class="breaking-marquee-container">
+      <div class="breaking-marquee-track">
+        <span class="breaking-text" id="breakingHeadline">Loading latest real-time NSE stock headlines...</span>
+      </div>
+    </div>
+    <button class="breaking-action" id="breakingActionBtn">VIEW FULL STORY →</button>
+  </div>
+
+  <!-- GEMINI LIVE MARKET BRAIN INTEL PANEL (NSE SPECIALIZED) -->
+  <section class="ai-brain-panel" id="aiBrainPanel">
+    <div class="ai-brain-header">
+      <div class="ai-brain-title">
+        <div class="ai-brain-icon">
+          <span class="ai-glow-ring"></span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2a8 8 0 0 0-8 8c0 3 2 5.5 4 7v3h8v-3c2-1.5 4-4 4-7a8 8 0 0 0-8-8z"></path>
+            <line x1="9" y1="9" x2="9.01" y2="9" stroke-width="3"></line>
+            <line x1="15" y1="9" x2="15.01" y2="9" stroke-width="3"></line>
+            <path d="M10 13a4 4 0 0 0 4 0"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="ai-main-title">
+            GEMINI LIVE NSE MARKET BRAIN
+            <span class="ai-model-tag" id="aiModelTag">GEMINI 3.8 FLASH</span>
+            <span class="ai-status-pulse">● LIVE SYNTHESIS</span>
+          </div>
+          <div class="ai-sub-title">AUTONOMOUS DALAL STREET IMPACT & NSE SHARE MOVEMENT PREDICTION ENGINE</div>
+        </div>
+      </div>
+
+      <div class="ai-sentiment-meter">
+        <div class="sentiment-meta">
+          <span class="sentiment-label">NSE NIFTY SENTIMENT:</span>
+          <span class="sentiment-val" id="sentimentLabel">ANALYZING...</span>
+        </div>
+        <div class="sentiment-bar-track">
+          <div class="sentiment-bar-fill" id="sentimentBarFill" style="width: 50%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ai-brain-content">
+      <!-- AI Executive Overview Box -->
+      <div class="ai-overview-box">
+        <div class="ai-box-badge">AI EXECUTIVE DALAL STREET BRIEFING</div>
+        <p class="ai-overview-text" id="aiOverviewText">
+          Synthesizing real-time NSE stock news across StockEdge, Yahoo Finance India, Economic Times, and Moneycontrol...
+        </p>
+        <div class="ai-trader-takeaway" id="aiTraderTakeaway">
+          <strong>TRADER TAKEAWAY:</strong> <span id="aiTakeawayText">Analyzing active Indian market catalysts...</span>
+        </div>
+      </div>
+
+      <!-- Most Affected Shares Radar Grid -->
+      <div class="ai-affected-shares-wrap">
+        <div class="ai-box-badge">NSE SHARES MOVING MOST (PREDICTED IMPACT)</div>
+        <div class="ai-shares-grid" id="aiSharesGrid">
+          <div class="ai-share-card skeleton-share"></div>
+          <div class="ai-share-card skeleton-share"></div>
+          <div class="ai-share-card skeleton-share"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NIFTY 50 vs CRUDE OIL DUAL-LINE CHART & AI INVERSE CORRELATION ENGINE -->
+  <section class="macro-chart-panel" id="niftyCrudePanel">
+    <div class="macro-header">
+      <div class="macro-title-group">
+        <div class="macro-icon-box">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+            <polyline points="2 7 8 13 14 7 22 15" stroke-width="2.5"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="macro-main-title">
+            NIFTY 50 vs BRENT CRUDE OIL // DUAL-LINE INVERSE RADAR
+            <span class="badge-legend nifty-legend">🔴 NIFTY 50 (RED LINE)</span>
+            <span class="badge-legend crude-legend">🔵 CRUDE OIL (BLUE LINE)</span>
+            <span class="badge-sync-pulse">● 10s LIVE SYNC</span>
+          </div>
+          <div class="macro-sub-title">REAL-TIME INVERSE CORRELATION, HORIZONTAL REFERENCE LEVELS & WHOLE DATA NEXT MOVE ENGINE</div>
+        </div>
+      </div>
+
+      <div class="macro-snapshot-counter">
+        <span class="counter-label">ACCUMULATED DATA:</span>
+        <span class="counter-val" id="macroSnapshotCount">0 snapshots</span>
+        <span class="counter-tag">WHOLE STORE ACTIVE</span>
+      </div>
+    </div>
+
+    <!-- Live Macro Calculation Metric KPI Cards -->
+    <div class="macro-kpi-grid">
+      <div class="macro-kpi-card nifty-kpi">
+        <div class="kpi-top">
+          <span class="kpi-tag nifty">🔴 NIFTY 50</span>
+          <span class="kpi-change" id="kpiNiftyChange">--%</span>
+        </div>
+        <div class="kpi-price" id="kpiNiftyPrice">₹--</div>
+        <div class="kpi-levels">
+          <span>R1: <strong id="kpiNiftyR1">--</strong></span> • 
+          <span>Pivot: <strong id="kpiNiftyPivot">--</strong></span> • 
+          <span>S1: <strong id="kpiNiftyS1">--</strong></span>
+        </div>
+      </div>
+
+      <div class="macro-kpi-card crude-kpi">
+        <div class="kpi-top">
+          <span class="kpi-tag crude">🔵 BRENT CRUDE</span>
+          <span class="kpi-change" id="kpiCrudeChange">--%</span>
+        </div>
+        <div class="kpi-price" id="kpiCrudePrice">$--</div>
+        <div class="kpi-levels">
+          <span>R1: <strong id="kpiCrudeR1">$--</strong></span> • 
+          <span>Pivot: <strong id="kpiCrudePivot">$--</strong></span> • 
+          <span>S1: <strong id="kpiCrudeS1">$--</strong></span>
+        </div>
+      </div>
+
+      <div class="macro-kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-tag-sub">EMPIRICAL CORRELATION (r)</span>
+          <span class="kpi-badge-inverse" id="kpiCorrelationLabel">INVERSE</span>
+        </div>
+        <div class="kpi-metric-val highlight" id="kpiCorrelationR">-0.82</div>
+        <div class="kpi-subtext">Strong inverse pressure on Indian equities</div>
+      </div>
+
+      <div class="macro-kpi-card">
+        <div class="kpi-top">
+          <span class="kpi-tag-sub">CALCULATED RATIO</span>
+          <span class="kpi-badge-gold">ELASTICITY</span>
+        </div>
+        <div class="kpi-metric-val" id="kpiDragRatio">~45 pts / $1</div>
+        <div class="kpi-subtext" id="kpiTotalDrag">Current Drag: ~-58 pts</div>
+      </div>
+
+      <div class="macro-kpi-card prediction-kpi">
+        <div class="kpi-top">
+          <span class="kpi-tag-sub">AI NEXT MOVE PREDICTION</span>
+          <span class="kpi-badge-prob" id="kpiPredictionProb">82% PROB</span>
+        </div>
+        <div class="kpi-prediction-dir" id="kpiPredictionDir">ANALYZING...</div>
+        <div class="kpi-target" id="kpiPredictionTarget">Target: Calculating...</div>
+      </div>
+    </div>
+
+    <!-- Dual Line Chart Screen with Horizontal Levels -->
+    <div class="macro-chart-canvas-wrap">
+      <div class="chart-level-legend">
+        <span><strong style="color: #ff3366;">━</strong> Nifty 50 (Left Axis ₹)</span>
+        <span><strong style="color: #38bdf8;">━</strong> Brent Crude Oil (Right Axis $)</span>
+        <span><strong style="color: rgba(255,255,255,0.45);">┈┈</strong> Horizontal Levels (R1 / Pivot / S1)</span>
+      </div>
+      <div class="chart-container-inner">
+        <canvas id="niftyCrudeChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Gemini AI Macro Analysis & Predictive Next Move Insights -->
+    <div class="macro-ai-analysis-grid">
+      <div class="macro-ai-card">
+        <div class="macro-card-header">
+          <span class="ai-sparkle">✦</span>
+          <strong>WHY NIFTY & CRUDE WORK IN OPPOSITE DIRECTIONS:</strong>
+        </div>
+        <p class="macro-ai-body" id="aiWhyOppositeText">
+          India imports over 85% of its crude oil requirements. A spike in Brent crude inflates the national import bill, widens current account deficit, and directly squeezes corporate operating margins in paints, airlines, tyres, and FMCG.
+        </p>
+        <div class="macro-calculated-rule" id="aiCalculatedRule">
+          <strong>QUANTITATIVE RULE:</strong> Calculating mathematical sensitivity...
+        </div>
+      </div>
+
+      <div class="macro-ai-card">
+        <div class="macro-card-header">
+          <span class="ai-sparkle">⚡</span>
+          <strong>NIFTY 50 NEXT MOVE FORECAST & SECTOR RADAR:</strong>
+        </div>
+        <div class="macro-trigger-box" id="aiTriggerBox">
+          <strong>NEXT MOVE CATALYST:</strong> <span id="aiTriggerCatalyst">Evaluating Crude Oil pivot breakout and accumulated trajectory...</span>
+        </div>
+        <div class="macro-sectors-list" id="aiSectorImpactList">
+          <!-- Populated by JS -->
+        </div>
+        <div class="macro-trade-takeaway" id="aiActionableAdvice">
+          <strong>TRADER DIRECTIVE:</strong> Awaiting next 10-second data sequence...
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Terminal Layout -->
+  <main class="terminal-body">
+    <!-- Filters & Search Toolbar -->
+    <div class="toolbar">
+      <div class="search-wrapper">
+        <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="searchInput" placeholder="Search NSE Tickers ($RELIANCE, $TCS, $KABRAEXTRU, $STYLEBAAZA) or keywords..." autocomplete="off">
+        <button id="searchClear" class="search-clear hidden">&times;</button>
+      </div>
+
+      <!-- Provider Filter Tabs -->
+      <div class="filter-group source-filters" id="sourceFilters">
+        <button class="filter-pill active" data-source="ALL">ALL NSE SOURCES</button>
+        <button class="filter-pill" data-source="StockEdge"><span class="src-dot stockedge"></span> StockEdge (App 4)</button>
+        <button class="filter-pill" data-source="Yahoo"><span class="src-dot yahoo"></span> Yahoo Finance India (App 2)</button>
+        <button class="filter-pill" data-source="Economic Times"><span class="src-dot wsj"></span> Economic Times (NSE)</button>
+        <button class="filter-pill" data-source="Moneycontrol"><span class="src-dot cnbc"></span> Moneycontrol (NSE)</button>
+      </div>
+
+      <!-- Quick NSE Ticker Tag Filter -->
+      <div class="quick-tags">
+        <span class="quick-tags-title">HOT NSE TICKERS:</span>
+        <button class="tag-pill" data-ticker="NIFTY">$NIFTY</button>
+        <button class="tag-pill" data-ticker="RELIANCE">$RELIANCE</button>
+        <button class="tag-pill" data-ticker="TCS">$TCS</button>
+        <button class="tag-pill" data-ticker="HDFCBANK">$HDFCBANK</button>
+        <button class="tag-pill" data-ticker="KABRAEXTRU">$KABRA</button>
+        <button class="tag-pill" data-ticker="STYLEBAAZA">$STYLEBAAZA</button>
+        <button class="tag-pill" data-ticker="TATAMOTORS">$TATAMOTORS</button>
+      </div>
+    </div>
+
+    <!-- Feed Stats and New Items Notification Toast -->
+    <div class="feed-header">
+      <div class="feed-stats">
+        <span class="stat-item"><strong id="totalCountDisplay">0</strong> NSE Stories Monitored</span>
+        <span class="stat-divider">•</span>
+        <span class="stat-item">Sync Frequency: <strong>10 Seconds</strong></span>
+        <span class="stat-divider">•</span>
+        <span class="stat-item" id="lastUpdatedDisplay">Updated just now</span>
+      </div>
+
+      <!-- Floating notification when new items land -->
+      <button class="new-items-pill hidden" id="newItemsPill">
+        <span class="pill-sparkle">✦</span>
+        <span id="newItemsCountText">3 new stories</span>
+        <span class="pill-arrow">↑</span>
+      </button>
+
+      <div class="feed-header-controls">
+        <!-- Interactive Text Size Scaling Controller -->
+        <div class="text-scaler-group">
+          <span class="scaler-label">TEXT SIZE:</span>
+          <button class="btn-scaler" id="btnFontSm" title="Normal text size">A</button>
+          <button class="btn-scaler active" id="btnFontMd" title="Large readable text size">A+</button>
+          <button class="btn-scaler" id="btnFontLg" title="Extra large text size">A++</button>
+        </div>
+
+        <div class="view-toggles">
+          <button class="view-btn active" id="viewGridBtn" title="Grid View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </button>
+          <button class="view-btn" id="viewListBtn" title="Terminal Compact View">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><line x1="8" y1="6" x2="21" y2="6" stroke="currentColor" stroke-width="2.5"></line><line x1="8" y1="12" x2="21" y2="12" stroke="currentColor" stroke-width="2.5"></line><line x1="8" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="2.5"></line><circle cx="4" cy="6" r="2"></circle><circle cx="4" cy="12" r="2"></circle><circle cx="4" cy="18" r="2"></circle></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid / List Container -->
+    <div class="news-container">
+      <div class="news-grid" id="newsGrid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
+      <!-- Sidebar with Movers & Source Breakdown -->
+      <aside class="terminal-sidebar">
+        <!-- Top Movers on News Widget (From StockEdge NSE) -->
+        <div class="sidebar-widget">
+          <div class="widget-header">
+            <div class="widget-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+              </svg>
+              TOP NSE MOVERS IN NEWS
+            </div>
+            <span class="widget-badge">LIVE NSE</span>
+          </div>
+          <div class="movers-list" id="moversList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Terminal Status & Source Breakdown Widget -->
+        <div class="sidebar-widget">
+          <div class="widget-header">
+            <div class="widget-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              NSE FEED FEEDS
+            </div>
+          </div>
+          <div class="sources-breakdown" id="sourcesBreakdown">
+            <div class="source-stat-row">
+              <div class="source-id"><span class="badge-app">App 4</span> <strong>StockEdge</strong></div>
+              <span class="source-count" id="countStockEdge">0 stories</span>
+            </div>
+            <div class="source-stat-row">
+              <div class="source-id"><span class="badge-app">App 2</span> <strong>Yahoo Finance IN</strong></div>
+              <span class="source-count" id="countYahoo">0 stories</span>
+            </div>
+            <div class="source-stat-row">
+              <div class="source-id"><span class="badge-app">NSE Feed</span> <strong>Economic Times</strong></div>
+              <span class="source-count" id="countET">0 stories</span>
+            </div>
+            <div class="source-stat-row">
+              <div class="source-id"><span class="badge-app">NSE Feed</span> <strong>Moneycontrol</strong></div>
+              <span class="source-count" id="countMC">0 stories</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audio Dalal Street Briefing Reader -->
+        <div class="sidebar-widget audio-widget">
+          <div class="audio-box">
+            <div class="audio-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00f59b" stroke-width="2">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+            </div>
+            <div class="audio-info">
+              <div class="audio-title">DALAL STREET VOICE</div>
+              <div class="audio-sub">Listen to breaking NSE stock briefs</div>
+            </div>
+          </div>
+          <button class="btn-voice" id="btnReadTopStory">
+            <span>▶ READ TOP NSE STORY ALOUD</span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- Full Story Reader Modal / Drawer -->
+  <div class="modal-overlay hidden" id="readerModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-source-wrap">
+          <span class="modal-source-badge" id="modalSourceBadge">NSE SOURCE</span>
+          <span class="modal-time" id="modalTime">Time</span>
+        </div>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+
+      <div class="modal-content">
+        <h1 class="modal-headline" id="modalHeadline">Headline Title</h1>
+
+        <div class="modal-tickers-bar" id="modalTickersBar">
+          <!-- Stock tags -->
+        </div>
+
+        <div class="modal-image-container" id="modalImageContainer">
+          <img id="modalImage" src="" alt="News Image">
+        </div>
+
+        <div class="modal-body-text" id="modalBodyText">
+          <!-- Full article content -->
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn-primary" id="modalAudioBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            </svg>
+            Listen to Summary
+          </button>
+          <a href="#" target="_blank" rel="noopener noreferrer" class="btn-outline" id="modalExternalLink">
+            Open Original Article ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="terminal-footer">
+    <div class="footer-left">
+      <span>● NSE FEED ENGINE ACTIVE</span>
+      <span>• AUTO-REFRESH: 10s INTERVAL</span>
+      <span>• 100% INDIAN EQUITIES FOCUS</span>
+    </div>
+    <div class="footer-right">
+      <span>NATIONAL STOCK EXCHANGE OF INDIA (NSE) // GEMINI 3.8 FLASH</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
